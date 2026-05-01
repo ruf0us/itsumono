@@ -1,0 +1,734 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+    <title>Itsumono</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+        .container { max-width: 380px; margin: 0 auto; min-height: 100vh; background: white; position: relative; padding-top: env(safe-area-inset-top); }
+
+        /* タブバー */
+        .tab-bar { display: flex; border-bottom: 2px solid #eee; position: sticky; top: 0; background: white; z-index: 10; padding-left: 50px; }
+        body.dark-mode .tab-bar { background: #2c2c2e; }
+        .tab-btn { flex: 1; padding: 14px 0; font-size: 16px; border: none; background: none; cursor: pointer; font-weight: bold; color: #888; position: relative; }
+        .tab-btn.active { color: #007aff; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 20%; width: 60%; height: 3px; background: #007aff; border-radius: 2px; }
+        .hamburger-btn { position: absolute; left: 10px; top: 12px; background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px 8px; color: #333; z-index: 11; }
+        .menu-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; }
+        .menu-overlay.active { display: block !important; }
+        .menu-panel { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: white; z-index: 9999; transition: left 0.3s ease; padding: 60px 0 20px 0; box-sizing: border-box; }
+        .menu-panel.open { left: 0 !important; }
+        .menu-item { display: block; width: 100%; padding: 14px 20px; border: none; background: none; font-size: 16px; text-align: left; cursor: pointer; color: #333; box-sizing: border-box; }
+        .menu-item:hover { background: #f0f2f5; }
+
+        /* タブコンテンツ */
+        .tab-content { display: none; padding: 16px; padding-bottom: 80px; }
+        .tab-content.active { display: block; }
+
+        /* 入力エリア */
+        .input-group { display: flex; gap: 6px; margin-bottom: 12px; }
+        .input-group input[type="text"] { flex: 1; min-width: 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .input-group select { flex-shrink: 0; width: 80px; padding: 10px 4px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: white; }
+        .input-group button { flex-shrink: 0; padding: 10px 10px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; white-space: nowrap; }
+
+        /* カテゴリグループ */
+        .category-group { margin-bottom: 16px; }
+        .category-header { font-size: 16px; font-weight: bold; color: #666; padding: 6px 4px; border-bottom: 1px solid #eee; margin-bottom: 4px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .category-toggle { font-size: 12px; color: #999; margin-left: 8px; }
+
+        /* アイテム行 */
+        .item-row { display: flex; align-items: center; padding: 10px 4px; border-bottom: 1px solid #f5f5f5; gap: 8px; }
+        .cb-container { position: relative; width: 20px; height: 20px; flex-shrink: 0; }
+        .cb-container input[type="checkbox"] { position: absolute; opacity: 0; width: 20px; height: 20px; margin: 0; cursor: pointer; z-index: 1; }
+        .cb-visual { position: absolute; top: 0; left: 0; width: 20px; height: 20px; background: white; border: 2px solid #ddd; border-radius: 4px; box-sizing: border-box; pointer-events: none; }
+        .cb-container input:checked + .cb-visual { background: #007aff; border-color: #007aff; }
+        .cb-visual::after { content: ''; position: absolute; display: none; left: 5px; top: 2px; width: 5px; height: 9px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .cb-container input:checked + .cb-visual::after { display: block; }
+        .item-row .item-name { flex: 1; font-size: 16px; color: #333; }
+        .item-row .item-name input { font-size: 16px; padding: 4px; border: 1px solid #007aff; border-radius: 4px; width: 100%; }
+        .item-row .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .item-row .edit-btn { color: #007aff; font-size: 13px; border: 1px solid #007aff; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
+        .item-row .delete-btn { color: #ff3b30; font-size: 13px; border: 1px solid #ff3b30; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
+
+        /* ストアタブ */
+        .store-item-row { display: flex; align-items: center; padding: 12px 4px; border-bottom: 1px solid #f5f5f5; gap: 8px; }
+        .store-item-row .cb-container input:checked + .cb-visual { background: #007aff; border-color: #007aff; }
+        .store-item-row .item-name { flex: 1; font-size: 16px; color: #333; }
+        .store-item-row.purchased .item-name { text-decoration: line-through; color: #999; }
+
+        /* モーダル */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-panel { background: white; width: 90%; max-width: 360px; border-radius: 12px; padding: 20px; max-height: 80vh; overflow-y: auto; }
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; text-align: center; }
+        .modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
+        .modal-input-group { display: flex; gap: 6px; margin-bottom: 16px; }
+        .modal-input-group input[type="text"] { flex: 1; min-width: 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .modal-input-group input#newCategoryEmoji { flex: 0 0 50px; min-width: 50px; text-align: center; }
+        .modal-input-group button { flex-shrink: 0; padding: 10px 10px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
+
+        /* カテゴリリスト（モーダル内） */
+        .category-list { list-style: none; padding: 0; margin: 0; }
+        .category-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .category-list .cat-name { font-size: 16px; color: #333; flex: 1; }
+        .category-list .cat-name input { font-size: 16px; padding: 4px; border: 1px solid #007aff; border-radius: 4px; width: 100%; }
+        .category-list .cat-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; }
+        .category-list .cat-edit-btn { color: #007aff; font-size: 13px; border: 1px solid #007aff; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
+        .category-list .cat-delete-btn { color: #ff3b30; font-size: 13px; border: 1px solid #ff3b30; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
+        .no-items { text-align: center; color: #999; padding: 30px; font-size: 14px; }
+
+        /* アイテム編集モーダル */
+        .edit-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .edit-modal-overlay.active { display: flex; }
+        .edit-modal-panel { background: white; width: 90%; max-width: 360px; border-radius: 12px; padding: 20px; }
+        .edit-modal-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; text-align: center; }
+        .edit-modal-field { margin-bottom: 12px; }
+        .edit-modal-field label { display: block; font-size: 14px; color: #666; margin-bottom: 4px; }
+        .edit-modal-field input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .edit-modal-field select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: white; box-sizing: border-box; }
+        .edit-modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .edit-modal-actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; }
+        .edit-modal-actions .save-btn { background: #007aff; color: white; }
+        .edit-modal-actions .cancel-btn { background: #f0f2f5; color: #333; }
+
+        /* ダークモード（クラスベース） */
+        body.dark-mode { background: #1c1c1e; }
+        body.dark-mode .container { background: #2c2c2e; }
+        body.dark-mode .tab-bar { border-bottom-color: #3a3a3c; background: #2c2c2e; }
+        body.dark-mode .tab-btn { color: #8e8e93; }
+        body.dark-mode .tab-btn.active { color: #0a84ff; }
+        body.dark-mode .tab-btn.active::after { background: #0a84ff; }
+        body.dark-mode .tab-settings { color: #8e8e93; }
+        body.dark-mode .input-group input[type=text],
+        body.dark-mode .input-group select { background: #3a3a3c; border-color: #505050; color: #fff; }
+        body.dark-mode .input-group button { background: #0a84ff; }
+        body.dark-mode .category-header { color: #8e8e93; border-bottom-color: #3a3a3c; }
+        body.dark-mode .category-toggle { color: #636366; }
+        body.dark-mode .item-row { border-bottom-color: #3a3a3c; }
+        body.dark-mode .item-row .cb-visual { background: #3a3a3c; border-color: #505050; }
+        body.dark-mode .item-row .cb-container input:checked + .cb-visual { background: #0a84ff; border-color: #0a84ff; }
+        body.dark-mode .item-name { color: #e0e0e0; }
+        body.dark-mode .store-item-row { border-bottom-color: #3a3a3c; }
+        body.dark-mode .store-item-row .cb-visual { background: #3a3a3c; border-color: #505050; }
+        body.dark-mode .store-item-row .cb-container input:checked + .cb-visual { background: #0a84ff; border-color: #0a84ff; }
+        body.dark-mode .store-item-row.purchased .item-name { color: #8e8e93; }
+        body.dark-mode .no-items { color: #8e8e93; }
+        body.dark-mode .modal-overlay, body.dark-mode .edit-modal-overlay { background: rgba(0,0,0,0.7); }
+        body.dark-mode .modal-panel, body.dark-mode .edit-modal-panel { background: #2c2c2e; color: #fff; }
+        body.dark-mode .modal-close { color: #8e8e93; }
+        body.dark-mode .modal-input-group input[type=text] { background: #3a3a3c; border-color: #505050; color: #fff; }
+        body.dark-mode .modal-input-group input#newCategoryEmoji { text-align: center; }
+        body.dark-mode .category-list li { border-bottom-color: #3a3a3c; }
+        body.dark-mode .cat-name { color: #e0e0e0; }
+        body.dark-mode .cat-name input { background: #3a3a3c; border-color: #0a84ff; color: #fff; }
+        body.dark-mode .edit-modal-field label { color: #8e8e93; }
+        body.dark-mode .edit-modal-field input[type=text],
+        body.dark-mode .edit-modal-field select { background: #3a3a3c; border-color: #505050; color: #fff; }
+        body.dark-mode .edit-modal-actions .cancel-btn { background: #3a3a3c; color: #fff; }
+        body.dark-mode .hamburger-btn { color: #e0e0e0; }
+        body.dark-mode .menu-panel { background: #2c2c2e; }
+        body.dark-mode .menu-item { color: #e0e0e0; }
+        body.dark-mode .menu-item:hover { background: #3a3a3c; }    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- タブバー -->
+    <div class="tab-bar">
+        <button class="hamburger-btn" onclick="openMenu(event)">☰</button>
+        <button class="tab-btn active" onclick="switchTab('home')">ホーム</button>
+        <button class="tab-btn" onclick="switchTab('store')">ストア</button>
+    </div>
+
+    <!-- ホームタブ -->
+    <div id="home-tab" class="tab-content active">
+        <div class="input-group">
+            <input type="text" id="itemInput" placeholder="買うものを入力...">
+            <select id="categorySelect"></select>
+            <button onclick="addItem()">追加</button>
+        </div>
+        <div id="homeList"></div>
+    </div>
+
+    <!-- ストアタブ -->
+    <div id="store-tab" class="tab-content">
+        <div id="storeList"></div>
+    </div>
+</div>
+
+    <!-- ハンバーガーメニュー -->
+    <div id="menuOverlay" class="menu-overlay" onclick="closeMenuIfOverlay(event)">
+        <div id="menuPanel" class="menu-panel">
+            <div style="padding: 0 20px 20px; border-bottom: 1px solid #eee; margin-bottom: 10px;">
+                <strong style="font-size: 18px;">メニュー</strong>
+            </div>
+            <button class="menu-item" onclick="downloadData()">&#x1F4E5; ダウンロード</button>
+            <button class="menu-item" onclick="uploadData()">&#x1F4E4; アップロード</button>
+            <button class="menu-item" onclick="menuOpenCategory()">&#x270F;&#xFE0F; カテゴリ編集</button>
+        </div>
+    </div>
+
+    <!-- アップロード用の非表示ファイル入力 -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;">
+
+<!-- カテゴリ管理モーダル -->
+<div id="categoryModal" class="modal-overlay" onclick="closeCategoryModalIfOverlay(event)">
+    <div class="modal-panel">
+        <button class="modal-close" onclick="closeCategoryModal()">&times;</button>
+        <div class="modal-title">カテゴリ管理</div>
+        <div class="modal-input-group">
+            <input type="text" id="newCategoryEmoji" placeholder="絵文字" style="width: 50px; text-align: center; flex-shrink: 0;">
+            <input type="text" id="newCategoryInput" placeholder="新しいカテゴリ...">
+            <button onclick="addCategory()">追加</button>
+        </div>
+        <ul id="categoryList" class="category-list"></ul>
+    </div>
+</div>
+
+<!-- アイテム編集モーダル -->
+<div id="editItemModal" class="edit-modal-overlay" onclick="closeEditItemModalIfOverlay(event)">
+    <div class="edit-modal-panel">
+        <div class="edit-modal-title">アイテム編集</div>
+        <div class="edit-modal-field">
+            <label for="editItemName">名前</label>
+            <input type="text" id="editItemName" placeholder="アイテム名...">
+        </div>
+        <div class="edit-modal-field">
+            <label for="editItemCategory">カテゴリ</label>
+            <select id="editItemCategory"></select>
+        </div>
+        <div class="edit-modal-actions">
+            <button class="cancel-btn" onclick="closeEditItemModal()">キャンセル</button>
+            <button class="save-btn" onclick="saveEditItem()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // データ定義
+    let appData = { items: [], categories: [] };
+    let collapsedCategories = new Set(); // 折りたたまれているカテゴリ名（displayName）を管理
+
+    // デフォルトカテゴリの絵文字マップ
+    const defaultCategoryEmojis = {
+        '野菜': '🥬', '果物': '🍎', '魚類': '🐟', '肉類': '🥩', '飲物': '🥤',
+        'ベーカリー': '🍞', '穀類': '🌾', '調味料': '🧂', 'スナック': '🍿', '油': '🫒',
+        '乳製品': '🧀', '冷凍食品': '❄️', '缶入り食品': '🥫', 'レトルト食品': '🍱',
+        '家庭用品': '🏠', '文房具': '✏️'
+    };
+
+    function generateId(prefix) {
+        return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    function loadData() {
+        const raw = localStorage.getItem('itsumono_data');
+        if (raw) {
+            appData = JSON.parse(raw);
+            appData.categories.forEach(cat => {
+                if (cat.emoji === undefined || cat.emoji === '') {
+                    cat.emoji = defaultCategoryEmojis[cat.name] || '';
+                }
+            });
+        } else {
+            appData = { items: [], categories: [] };
+        }
+        if (!appData.categories.find(c => c.id === '__none__')) {
+            appData.categories.unshift({ id: '__none__', name: '未分類', emoji: '' });
+        }
+        const defaultCategories = [
+            { name: '野菜', emoji: '🥬' }, { name: '果物', emoji: '🍎' },
+            { name: '魚類', emoji: '🐟' }, { name: '肉類', emoji: '🥩' },
+            { name: '飲物', emoji: '🥤' }, { name: 'ベーカリー', emoji: '🍞' },
+            { name: '穀類', emoji: '🌾' }, { name: '調味料', emoji: '🧂' },
+            { name: 'スナック', emoji: '🍿' }, { name: '油', emoji: '🫒' },
+            { name: '乳製品', emoji: '🧀' }, { name: '冷凍食品', emoji: '❄️' },
+            { name: '缶入り食品', emoji: '🥫' }, { name: 'レトルト食品', emoji: '🍱' },
+            { name: '家庭用品', emoji: '🏠' }, { name: '文房具', emoji: '✏️' }
+        ];
+        const hasOtherCategories = appData.categories.some(c => c.id !== '__none__');
+        if (!hasOtherCategories) {
+            defaultCategories.forEach(cat => {
+                appData.categories.push({ id: generateId('cat'), name: cat.name, emoji: cat.emoji });
+            });
+            saveData();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('itsumono_data', JSON.stringify(appData));
+    }
+
+    // タブ切り替え
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        if (tab === 'home') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('home-tab').classList.add('active');
+            renderHomeTab();
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('store-tab').classList.add('active');
+            renderStoreTab();
+        }
+    }
+
+    // カテゴリ選択を更新（絵文字付き）
+    function updateCategorySelect() {
+        const selects = [document.getElementById('categorySelect'), document.getElementById('editItemCategory')];
+        selects.forEach(select => {
+            if (!select) return;
+            select.innerHTML = '';
+            appData.categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = (cat.emoji || '') + ' ' + cat.name;
+                select.appendChild(opt);
+            });
+        });
+    }
+
+    // カテゴリ表示名（絵文字付き）
+    function getCategoryDisplayName(catId) {
+        const cat = appData.categories.find(c => c.id === catId);
+        if (!cat) return '未分類';
+        return (cat.emoji || '') + ' ' + cat.name;
+    }
+
+    function getCategoryName(catId) {
+        const cat = appData.categories.find(c => c.id === catId);
+        return cat ? cat.name : '未分類';
+    }
+
+    // アイテムをカテゴリ別にグループ化（絵文字付き名称でグループ化）
+    function groupByCategory(items) {
+        const groups = {};
+        items.forEach(item => {
+            const displayName = getCategoryDisplayName(item.categoryId);
+            if (!groups[displayName]) groups[displayName] = [];
+            groups[displayName].push(item);
+        });
+        // 各カテゴリ内で：購入日時があるものは新しい順、ないものは最後に
+        for (const name in groups) {
+            const withDate = groups[name].filter(i => i.purchaseDate);
+            const withoutDate = groups[name].filter(i => !i.purchaseDate);
+            withDate.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
+            groups[name] = withDate.concat(withoutDate);
+        }
+        return groups;
+    }
+
+    // ホームタブ描画（全アイテムを表示）
+    function renderHomeTab() {
+        updateCategorySelect();
+        const container = document.getElementById('homeList');
+        container.innerHTML = '';
+        if (appData.items.length === 0) {
+            container.innerHTML = '<div class="no-items">アイテムがありません</div>';
+            return;
+        }
+        const groups = groupByCategory(appData.items);
+        const sortedCatNames = Object.keys(groups).sort();
+        sortedCatNames.forEach(catName => {
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            const isCollapsed = collapsedCategories.has(catName);
+            header.innerHTML = `
+                <span>${catName}</span>
+                <span class="category-toggle">${isCollapsed ? '>' : 'v'}</span>
+            `;
+            header.onclick = () => toggleCategory(catName);
+            container.appendChild(header);
+
+            const itemsContainer = document.createElement('div');
+            itemsContainer.className = 'category-items';
+            itemsContainer.style.display = isCollapsed ? 'none' : 'block';
+            groups[catName].forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <div class="cb-container">
+                        <input type="checkbox" id="cb_home_${item.id}" ${item.inStore ? 'checked' : ''} onchange="toggleInStore('${item.id}')">
+                        <div class="cb-visual"></div>
+                    </div>
+                    <span class="item-name" id="name_${item.id}">${escapeHtml(item.name)}</span>
+                    <div class="item-actions">
+                        <button class="edit-btn" onclick="startEditItem('${item.id}')">編集</button>
+                        <button class="delete-btn" onclick="removeItem('${item.id}')">削除</button>
+                    </div>
+                `;
+                itemsContainer.appendChild(row);
+            });
+            container.appendChild(itemsContainer);
+        });
+    }
+
+    // カテゴリ折りたたみ切り替え
+    function toggleCategory(catName) {
+        if (collapsedCategories.has(catName)) {
+            collapsedCategories.delete(catName);
+        } else {
+            collapsedCategories.add(catName);
+        }
+        renderHomeTab();
+    }
+
+    // ストアタブ描画
+    function renderStoreTab() {
+        const container = document.getElementById('storeList');
+        container.innerHTML = '';
+        const storeItems = appData.items.filter(i => i.inStore === true);
+        if (storeItems.length === 0) {
+            container.innerHTML = '<div class="no-items">ストアにアイテムがありません</div>';
+            return;
+        }
+        const groups = groupByCategory(storeItems);
+        const sortedCatNames = Object.keys(groups).sort();
+        sortedCatNames.forEach(catName => {
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.textContent = catName;
+            container.appendChild(header);
+            groups[catName].forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'store-item-row';
+                row.id = 'store_row_' + item.id;
+                const cbContainer = document.createElement('div');
+                cbContainer.className = 'cb-container';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                // ストアタブでは初期状態はオフ（購入日時がない状態）
+                cb.checked = false;
+                cb.addEventListener('change', function() { purchaseItem(item.id); });
+                const cbVisual = document.createElement('div');
+                cbVisual.className = 'cb-visual';
+                cbContainer.appendChild(cb);
+                cbContainer.appendChild(cbVisual);
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'item-name';
+                nameSpan.id = 'store_name_' + item.id;
+                nameSpan.textContent = item.name;
+                row.appendChild(cbContainer);
+                row.appendChild(nameSpan);
+                container.appendChild(row);
+            });
+        });
+    }
+
+    // アイテム追加
+    function addItem() {
+        const input = document.getElementById('itemInput');
+        const catSelect = document.getElementById('categorySelect');
+        const name = input.value.trim();
+        if (!name) return;
+        appData.items.push({
+            id: generateId('item'),
+            name: name,
+            categoryId: catSelect.value,
+            inStore: true
+        });
+        input.value = '';
+        saveData();
+        renderHomeTab();
+    }
+
+    // アイテム削除
+    function removeItem(id) {
+        if (!confirm('本当に削除しますか？')) return;
+        appData.items = appData.items.filter(i => i.id !== id);
+        saveData();
+        renderHomeTab();
+    }
+
+    // アイテム編集モーダル
+    let editingItemId = null;
+
+    function startEditItem(id) {
+        const item = appData.items.find(i => i.id === id);
+        if (!item) return;
+        editingItemId = id;
+        document.getElementById('editItemName').value = item.name;
+        updateCategorySelect();
+        document.getElementById('editItemCategory').value = item.categoryId;
+        document.getElementById('editItemModal').classList.add('active');
+        setTimeout(() => document.getElementById('editItemName').focus(), 100);
+    }
+
+    function saveEditItem() {
+        if (!editingItemId) return;
+        const item = appData.items.find(i => i.id === editingItemId);
+        if (!item) return;
+        const newName = document.getElementById('editItemName').value.trim();
+        if (newName) item.name = newName;
+        item.categoryId = document.getElementById('editItemCategory').value;
+        saveData();
+        closeEditItemModal();
+        renderHomeTab();
+    }
+
+    function closeEditItemModal() {
+        document.getElementById('editItemModal').classList.remove('active');
+        editingItemId = null;
+    }
+
+    function closeEditItemModalIfOverlay(e) {
+        if (e.target === e.currentTarget) closeEditItemModal();
+    }
+
+    // inStore 切り替え（ホームタブのチェックボックス）
+    function toggleInStore(id) {
+        const item = appData.items.find(i => i.id === id);
+        if (item) {
+            item.inStore = !item.inStore;
+            // purchaseDateはクリアしない（ストアでチェックされた時の記録を保持）
+            saveData();
+            renderHomeTab();
+            renderStoreTab();
+        }
+    }
+
+    // ストアタブのチェック切り替え（チェック入れで購入日時を記録）
+    function purchaseItem(id) {
+        const item = appData.items.find(i => i.id === id);
+        if (!item) return;
+        if (item.inStore) {
+            // チェック入れ：購入日時を記録、ストアから消える
+            item.purchaseDate = new Date().toISOString();
+            item.inStore = false;
+        } else {
+            // チェック外し：ストアに戻すが購入日時はクリアしない
+            item.inStore = true;
+        }
+        saveData();
+        renderStoreTab();
+        renderHomeTab();
+    }
+
+    // カテゴリ管理モーダル
+    function openCategoryModal() {
+        renderCategoryModal();
+        document.getElementById('categoryModal').classList.add('active');
+    }
+
+    function closeCategoryModal() {
+        document.getElementById('categoryModal').classList.remove('active');
+    }
+
+    function closeCategoryModalIfOverlay(e) {
+        if (e.target === e.currentTarget) closeCategoryModal();
+    }
+
+    function renderCategoryModal() {
+        const list = document.getElementById('categoryList');
+        list.innerHTML = '';
+        appData.categories.filter(c => c.id !== '__none__').forEach(cat => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="cat-name" id="cat_name_${cat.id}">${(cat.emoji || '') + ' ' + escapeHtml(cat.name)}</span>
+                <div class="cat-actions">
+                    <button class="cat-edit-btn" onclick="startEditCategory('${cat.id}')">編集</button>
+                    <button class="cat-delete-btn" onclick="removeCategory('${cat.id}')">削除</button>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    // カテゴリ追加
+    function addCategory() {
+        const input = document.getElementById('newCategoryInput');
+        const emojiInput = document.getElementById('newCategoryEmoji');
+        const name = input.value.trim();
+        if (!name) return;
+        appData.categories.push({ id: generateId('cat'), name: name, emoji: emojiInput.value.trim() });
+        input.value = '';
+        emojiInput.value = '';
+        saveData();
+        renderCategoryModal();
+        updateCategorySelect();
+    }
+
+    // カテゴリ編集開始（絵文字＋名前）
+    function startEditCategory(id) {
+        const nameSpan = document.getElementById('cat_name_' + id);
+        const cat = appData.categories.find(c => c.id === id);
+        if (!nameSpan || !cat) return;
+        nameSpan.innerHTML = `
+            <input type="text" id="edit_cat_emoji_${id}" value="${escapeHtml(cat.emoji || '')}" style="width:40px; text-align:center;" placeholder="😊">
+            <input type="text" id="edit_cat_${id}" value="${escapeHtml(cat.name)}" onkeydown="if(event.key==='Enter')finishEditCategory('${id}')">
+        `;
+        document.getElementById('edit_cat_' + id).focus();
+    }
+
+    // カテゴリ編集完了（絵文字＋名前）
+    function finishEditCategory(id) {
+        const editInput = document.getElementById('edit_cat_' + id);
+        const emojiInput = document.getElementById('edit_cat_emoji_' + id);
+        if (!editInput) return;
+        const newName = editInput.value.trim();
+        if (newName) {
+            const cat = appData.categories.find(c => c.id === id);
+            if (cat) {
+                cat.name = newName;
+                if (emojiInput) cat.emoji = emojiInput.value.trim();
+                saveData();
+            }
+        }
+        renderCategoryModal();
+        updateCategorySelect();
+    }
+
+    // カテゴリ削除
+    function removeCategory(id) {
+        appData.categories = appData.categories.filter(c => c.id !== id);
+        appData.items.forEach(item => {
+            if (item.categoryId === id) item.categoryId = '__none__';
+        });
+        saveData();
+        renderCategoryModal();
+        updateCategorySelect();
+        renderHomeTab();
+    }
+
+    // HTMLエスケープ
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Enterキーでアイテム追加
+    document.getElementById('itemInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addItem();
+    });
+    document.getElementById('newCategoryInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addCategory();
+    });
+    document.getElementById('editItemName').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') saveEditItem();
+    });
+
+    // システムのダークモード設定を検知
+    function updateDarkMode() {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+    }
+    updateDarkMode();
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateDarkMode);
+    }
+
+
+    // ハンバーガーメニュー制御
+    function openMenu(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        document.getElementById('menuOverlay').classList.add('active');
+        document.getElementById('menuPanel').classList.add('open');
+    }
+
+    function closeMenu() {
+        document.getElementById('menuOverlay').classList.remove('active');
+        document.getElementById('menuPanel').classList.remove('open');
+    }
+
+    function closeMenuIfOverlay(e) {
+        if (e.target === e.currentTarget) closeMenu();
+    }
+
+    // メニューからカテゴリ編集を開く
+    function menuOpenCategory() {
+        closeMenu();
+        openCategoryModal();
+    }
+
+    // ダウンロード機能
+    function downloadData() {
+        closeMenu();
+        const data = localStorage.getItem('itsumono_data');
+        if (!data) {
+            alert('保存データがありません');
+            return;
+        }
+        const json = JSON.stringify(JSON.parse(data), null, 2);
+        // UTF-8 BOM + JSON data, MIME type set to octet-stream for iOS
+        const bom = '﻿';
+        const blob = new Blob([bom + json], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        const h = String(now.getHours()).padStart(2, "0");
+        const min = String(now.getMinutes()).padStart(2, "0");
+        const sec = String(now.getSeconds()).padStart(2, "0");
+        a.download = 'itsumono_backup_' + y + m + d + '_' + h + min + sec + '.json';
+        a.href = url;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    // アップロード機能
+    function uploadData() {
+        closeMenu();
+        document.getElementById('fileInput').click();
+    }
+
+    // ファイル選択時の処理
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                // バリデーション
+                if (!Array.isArray(data.items) || !Array.isArray(data.categories)) {
+                    alert('無効なファイル形式です');
+                    return;
+                }
+                if (!confirm('現在のデータは破棄されますがよろしいですか？')) return;
+                localStorage.setItem('itsumono_data', JSON.stringify(data));
+                loadData();
+                renderHomeTab();
+                renderStoreTab();
+                alert('データを復元しました');
+            } catch (err) {
+                alert('ファイルの読み込みに失敗しました: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+        // 同じファイルを再選択できるように値をリセット
+        e.target.value = '';
+    });
+
+    // 初期化
+    loadData();
+    // 起動時は全カテゴリを折りたたむ
+    updateCollapsedCategories();
+    renderHomeTab();
+    // PWAモードで起動時、スクロール位置を上部にリセット（iOSでタブバーが隠れるのを防ぐ）
+    setTimeout(function() { window.scrollTo(0, 0); }, 100);
+
+    function updateCollapsedCategories() {
+        const allNames = new Set();
+        appData.items.forEach(item => {
+            allNames.add(getCategoryDisplayName(item.categoryId));
+        });
+        collapsedCategories = allNames; // 全カテゴリを折りたたみ状態に
+    }
+</script>
+
+</body>
+</html>
