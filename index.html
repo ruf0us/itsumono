@@ -238,6 +238,9 @@
                 if (cat.emoji === undefined || cat.emoji === '') {
                     cat.emoji = defaultCategoryEmojis[cat.name] || '';
                 }
+                if (cat.purchaseDate === undefined) {
+                    cat.purchaseDate = null;
+                }
             });
         } else {
             appData = { items: [], categories: [] };
@@ -258,7 +261,7 @@
         const hasOtherCategories = appData.categories.some(c => c.id !== '__none__');
         if (!hasOtherCategories) {
             defaultCategories.forEach(cat => {
-                appData.categories.push({ id: generateId('cat'), name: cat.name, emoji: cat.emoji });
+                appData.categories.push({ id: generateId('cat'), name: cat.name, emoji: cat.emoji, purchaseDate: null });
             });
             saveData();
         }
@@ -338,7 +341,17 @@
             return;
         }
         const groups = groupByCategory(appData.items);
-        const sortedCatNames = Object.keys(groups).sort();
+        const sortedCatNames = Object.keys(groups);
+        sortedCatNames.sort((a, b) => {
+            const catA = appData.categories.find(c => getCategoryDisplayName(c.id) === a);
+            const catB = appData.categories.find(c => getCategoryDisplayName(c.id) === b);
+            const dateA = catA ? catA.purchaseDate : null;
+            const dateB = catB ? catB.purchaseDate : null;
+            if (!dateA && !dateB) return a.localeCompare(b);
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+            return new Date(dateB) - new Date(dateA);
+        });
         sortedCatNames.forEach(catName => {
             const header = document.createElement('div');
             header.className = 'category-header';
@@ -505,6 +518,9 @@
             // チェック入れ：購入日時を記録、ストアから消える
             item.purchaseDate = new Date().toISOString();
             item.inStore = false;
+            // カテゴリの購入日時も更新
+            const cat = appData.categories.find(c => c.id === item.categoryId);
+            if (cat) cat.purchaseDate = item.purchaseDate;
         } else {
             // チェック外し：ストアに戻すが購入日時はクリアしない
             item.inStore = true;
@@ -550,7 +566,7 @@
         const emojiInput = document.getElementById('newCategoryEmoji');
         const name = input.value.trim();
         if (!name) return;
-        appData.categories.push({ id: generateId('cat'), name: name, emoji: emojiInput.value.trim() });
+        appData.categories.push({ id: generateId('cat'), name: name, emoji: emojiInput.value.trim(), purchaseDate: null });
         input.value = '';
         emojiInput.value = '';
         saveData();
