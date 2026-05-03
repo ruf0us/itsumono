@@ -465,6 +465,7 @@
 
     // アイテム編集モーダル
     let editingItemId = null;
+    let editingCategoryId = null;
 
     function startEditItem(id) {
         const item = appData.items.find(i => i.id === id);
@@ -534,10 +535,14 @@
     function openCategoryModal() {
         renderCategoryModal();
         document.getElementById('categoryModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 
     function closeCategoryModal() {
         document.getElementById('categoryModal').classList.remove('active');
+        document.body.style.overflow = '';
+        editingCategoryId = null;
+        setTimeout(function() { window.scrollTo(0, 0); }, 100);
     }
 
     function closeCategoryModalIfOverlay(e) {
@@ -549,15 +554,30 @@
         list.innerHTML = '';
         appData.categories.filter(c => c.id !== '__none__').forEach(cat => {
             const li = document.createElement('li');
-            li.innerHTML = `
-                <span class="cat-name" id="cat_name_${cat.id}">${(cat.emoji || '') + ' ' + escapeHtml(cat.name)}</span>
-                <div class="cat-actions">
-                    <button class="cat-edit-btn" onclick="startEditCategory('${cat.id}')">編集</button>
-                    <button class="cat-delete-btn" onclick="removeCategory('${cat.id}')">削除</button>
-                </div>
-            `;
+            if (editingCategoryId === cat.id) {
+                li.innerHTML = `
+                    <span class="cat-name" id="cat_name_${cat.id}">
+                        <input type="text" id="edit_cat_emoji_${cat.id}" value="${escapeHtml(cat.emoji || '')}" style="width:40px; text-align:center;" placeholder="😊">
+                        <input type="text" id="edit_cat_${cat.id}" value="${escapeHtml(cat.name)}" onkeydown="if(event.key==='Enter'){event.preventDefault();finishEditCategory('${cat.id}');}">
+                        <button class="cat-save-btn" onclick="finishEditCategory('${cat.id}')" style="color:#007aff; font-size:13px; border:1px solid #007aff; padding:4px 8px; border-radius:5px; background:none; cursor:pointer; margin-left:4px;">保存</button>
+                        <button class="cat-cancel-btn" onclick="cancelEditCategory()" style="color:#999; font-size:13px; border:1px solid #999; padding:4px 8px; border-radius:5px; background:none; cursor:pointer;">キャンセル</button>
+                    </span>
+                `;
+            } else {
+                li.innerHTML = `
+                    <span class="cat-name" id="cat_name_${cat.id}">${(cat.emoji || '') + ' ' + escapeHtml(cat.name)}</span>
+                    <div class="cat-actions">
+                        <button class="cat-edit-btn" onclick="startEditCategory('${cat.id}')" ${editingCategoryId ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>編集</button>
+                        <button class="cat-delete-btn" onclick="removeCategory('${cat.id}')" ${editingCategoryId ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>削除</button>
+                    </div>
+                `;
+            }
             list.appendChild(li);
         });
+        if (editingCategoryId) {
+            const input = document.getElementById('edit_cat_' + editingCategoryId);
+            if (input) input.focus();
+        }
     }
 
     // カテゴリ追加
@@ -574,16 +594,10 @@
         updateCategorySelect();
     }
 
-    // カテゴリ編集開始（絵文字＋名前）
+    // カテゴリ編集開始
     function startEditCategory(id) {
-        const nameSpan = document.getElementById('cat_name_' + id);
-        const cat = appData.categories.find(c => c.id === id);
-        if (!nameSpan || !cat) return;
-        nameSpan.innerHTML = `
-            <input type="text" id="edit_cat_emoji_${id}" value="${escapeHtml(cat.emoji || '')}" style="width:40px; text-align:center;" placeholder="😊">
-            <input type="text" id="edit_cat_${id}" value="${escapeHtml(cat.name)}" onkeydown="if(event.key==='Enter')finishEditCategory('${id}')">
-        `;
-        document.getElementById('edit_cat_' + id).focus();
+        editingCategoryId = id;
+        renderCategoryModal();
     }
 
     // カテゴリ編集完了（絵文字＋名前）
@@ -600,12 +614,21 @@
                 saveData();
             }
         }
+        editingCategoryId = null;
+        renderCategoryModal();
+        updateCategorySelect();
+    }
+
+    // カテゴリ編集キャンセル
+    function cancelEditCategory() {
+        editingCategoryId = null;
         renderCategoryModal();
         updateCategorySelect();
     }
 
     // カテゴリ削除
     function removeCategory(id) {
+        if (!confirm('本当に削除しますか？')) return;
         appData.categories = appData.categories.filter(c => c.id !== id);
         appData.items.forEach(item => {
             if (item.categoryId === id) item.categoryId = '__none__';
