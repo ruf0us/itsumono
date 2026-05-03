@@ -136,7 +136,9 @@
         body.dark-mode .hamburger-btn { color: #e0e0e0; }
         body.dark-mode .menu-panel { background: #2c2c2e; }
         body.dark-mode .menu-item { color: #e0e0e0; }
-        body.dark-mode .menu-item:hover { background: #3a3a3c; }    </style>
+        body.dark-mode .menu-item:hover { background: #3a3a3c; }
+        body.dark-mode .menu-title { border-bottom-color: #3a3a3c; }
+        body.dark-mode .menu-title strong { color: #e0e0e0; }    </style>
 </head>
 <body>
 
@@ -167,7 +169,7 @@
     <!-- ハンバーガーメニュー -->
     <div id="menuOverlay" class="menu-overlay" onclick="closeMenuIfOverlay(event)">
         <div id="menuPanel" class="menu-panel">
-            <div style="padding: 0 20px 20px; border-bottom: 1px solid #eee; margin-bottom: 10px;">
+            <div class="menu-title" style="padding: 0 20px 20px; border-bottom: 1px solid #eee; margin-bottom: 10px;">
                 <strong style="font-size: 18px;">メニュー</strong>
             </div>
             <button class="menu-item" onclick="downloadData()">&#x1F4E5; ダウンロード</button>
