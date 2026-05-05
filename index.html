@@ -140,6 +140,43 @@
         body.dark-mode .menu-title { border-bottom-color: #3a3a3c; }
         body.dark-mode .menu-title strong { color: #e0e0e0; }    </style>
 </head>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+      console.log('Service Worker Registered');
+    });
+  }
+
+  // 更新ボタン用の関数
+  function forceUpdate() {
+    // まずメニューを閉じる
+    document.getElementById('menuOverlay').classList.remove('active');
+    document.getElementById('menuPanel').classList.remove('open');
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        const unregisterPromises = registrations.map(reg => reg.unregister());
+        return Promise.all(unregisterPromises);
+      }).then(() => {
+        // キャッシュをクリア
+        if ('caches' in window) {
+          return caches.keys().then(cacheNames => {
+            return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+          });
+        }
+      }).then(() => {
+        // ページをリロード
+        window.location.reload();
+      }).catch(err => {
+        console.error('更新エラー:', err);
+        window.location.reload();
+      });
+    } else {
+      // Service Workerがサポートされていない場合はそのままリロード
+      window.location.reload();
+    }
+  }
+</script>
 <body>
 
 <div class="container">
@@ -175,7 +212,7 @@
             <button class="menu-item" onclick="downloadData()">&#x1F4E5; エクスポート</button>
             <button class="menu-item" onclick="uploadData()">&#x1F4E4; インポート</button>
             <button class="menu-item" onclick="menuOpenCategory()">&#x270F;&#xFE0F; カテゴリ編集</button>
-            <button class="menu-item" onclick="location.reload()">&#x1F504; アプリを更新</button>
+            <button class="menu-item" onclick="forceUpdate()">&#x1F504; アプリを更新</button>
         </div>
     </div>
 
