@@ -784,6 +784,7 @@
                 if (!confirm('現在のデータは破棄されますがよろしいですか？')) return;
                 localStorage.setItem('itsumono_data', JSON.stringify(data));
                 loadData();
+                updateCollapsedCategories();
                 renderHomeTab();
                 renderStoreTab();
                 alert('データを復元しました');
