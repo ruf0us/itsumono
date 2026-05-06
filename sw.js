@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-v2';
+const CACHE_NAME = 'cache-v-{COMMIT_HASH}';
 
 // インストール時にキャッシュを作成
 self.addEventListener('install', (event) => {

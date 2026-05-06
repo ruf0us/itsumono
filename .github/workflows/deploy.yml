@@ -1,0 +1,29 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract commit hash
+        run: echo "COMMIT_HASH=${GITHUB_SHA:0:8}" >> $GITHUB_ENV
+
+      - name: Replace placeholder in sw.js
+        run: |
+          sed -i "s/{COMMIT_HASH}/${COMMIT_HASH}/g" sw.js
+
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - uses: actions/deploy-pages@v4
