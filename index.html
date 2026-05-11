@@ -17,12 +17,12 @@
         .tab-btn { flex: 1; padding: 14px 0; font-size: 16px; border: none; background: none; cursor: pointer; font-weight: bold; color: #888; position: relative; }
         .tab-btn.active { color: #007aff; }
         .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 20%; width: 60%; height: 3px; background: #007aff; border-radius: 2px; }
-        .hamburger-btn { position: absolute; left: 10px; top: 12px; background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px 8px; color: #333; z-index: 11; }
+        .hamburger-btn { position: absolute; left: 10px; top: 12px; background: none; border: none; font-size: 24px; cursor: pointer; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; color: #333; z-index: 11; }
         .menu-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; }
         .menu-overlay.active { display: block !important; }
         .menu-panel { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: white; z-index: 9999; transition: left 0.3s ease; padding: 60px 0 20px 0; box-sizing: border-box; }
         .menu-panel.open { left: 0 !important; }
-        .menu-item { display: block; width: 100%; padding: 14px 20px; border: none; background: none; font-size: 16px; text-align: left; cursor: pointer; color: #333; box-sizing: border-box; }
+        .menu-item { display: block; width: 100%; padding: 15px 20px; border: none; background: none; font-size: 16px; text-align: left; cursor: pointer; color: #333; box-sizing: border-box; }
         .menu-item:hover { background: #f0f2f5; }
 
         /* タブコンテンツ */
@@ -51,8 +51,8 @@
         .item-row .item-name { flex: 1; font-size: 16px; color: #333; }
         .item-row .item-name input { font-size: 16px; padding: 4px; border: 1px solid #007aff; border-radius: 4px; width: 100%; }
         .item-row .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
-        .item-row .edit-btn { color: #007aff; font-size: 13px; border: 1px solid #007aff; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
-        .item-row .delete-btn { color: #ff3b30; font-size: 13px; border: 1px solid #ff3b30; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
+        .item-row .edit-btn { color: #007aff; font-size: 14px; border: 1px solid #007aff; padding: 6px 10px; border-radius: 5px; background: none; cursor: pointer; }
+        .item-row .delete-btn { color: #ff3b30; font-size: 14px; border: 1px solid #ff3b30; padding: 6px 10px; border-radius: 5px; background: none; cursor: pointer; }
 
         /* スクロール可能なリスト */
         #homeList, #storeList { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; padding-bottom: 16px; }
@@ -80,8 +80,8 @@
         .category-list .cat-name { font-size: 16px; color: #333; flex: 1; }
         .category-list .cat-name input { font-size: 16px; padding: 4px; border: 1px solid #007aff; border-radius: 4px; width: 100%; }
         .category-list .cat-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; }
-        .category-list .cat-edit-btn { color: #007aff; font-size: 13px; border: 1px solid #007aff; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
-        .category-list .cat-delete-btn { color: #ff3b30; font-size: 13px; border: 1px solid #ff3b30; padding: 4px 8px; border-radius: 5px; background: none; cursor: pointer; }
+        .category-list .cat-edit-btn { color: #007aff; font-size: 14px; border: 1px solid #007aff; padding: 6px 10px; border-radius: 5px; background: none; cursor: pointer; }
+        .category-list .cat-delete-btn { color: #ff3b30; font-size: 14px; border: 1px solid #ff3b30; padding: 6px 10px; border-radius: 5px; background: none; cursor: pointer; }
         .no-items { text-align: center; color: #999; padding: 30px; font-size: 14px; }
 
         /* アイテム編集モーダル */
@@ -94,7 +94,7 @@
         .edit-modal-field input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         .edit-modal-field select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: white; box-sizing: border-box; }
         .edit-modal-actions { display: flex; gap: 8px; margin-top: 16px; }
-        .edit-modal-actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; }
+        .edit-modal-actions button { flex: 1; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; }
         .edit-modal-actions .save-btn { background: #007aff; color: white; }
         .edit-modal-actions .cancel-btn { background: #f0f2f5; color: #333; }
 
@@ -225,7 +225,7 @@
         <button class="modal-close" onclick="closeCategoryModal()">&times;</button>
         <div class="modal-title">カテゴリ管理</div>
         <div class="modal-input-group">
-            <input type="text" id="newCategoryEmoji" placeholder="絵文字" style="width: 50px; text-align: center; flex-shrink: 0;">
+            <input type="text" id="newCategoryEmoji" placeholder="😊" inputmode="text" pattern="[\u{1F300}-\u{1F9FF}]" maxlength="2" style="width: 50px; text-align: center; flex-shrink: 0;" onfocus="this.select()">
             <input type="text" id="newCategoryInput" placeholder="新しいカテゴリ...">
             <button onclick="addCategory()">追加</button>
         </div>
@@ -596,7 +596,7 @@
             if (editingCategoryId === cat.id) {
                 li.innerHTML = `
                     <span class="cat-name" id="cat_name_${cat.id}">
-                        <input type="text" id="edit_cat_emoji_${cat.id}" value="${escapeHtml(cat.emoji || '')}" style="width:40px; text-align:center;" placeholder="😊">
+                        <input type="text" id="edit_cat_emoji_${cat.id}" value="${escapeHtml(cat.emoji || '')}" inputmode="text" maxlength="2" style="width:40px; text-align:center;" placeholder="😊" onfocus="this.select()">
                         <input type="text" id="edit_cat_${cat.id}" value="${escapeHtml(cat.name)}" onkeydown="if(event.key==='Enter'){event.preventDefault();finishEditCategory('${cat.id}');}">
                         <button class="cat-save-btn" onclick="finishEditCategory('${cat.id}')" style="color:#007aff; font-size:13px; border:1px solid #007aff; padding:4px 8px; border-radius:5px; background:none; cursor:pointer; margin-left:4px;">保存</button>
                         <button class="cat-cancel-btn" onclick="cancelEditCategory()" style="color:#999; font-size:13px; border:1px solid #999; padding:4px 8px; border-radius:5px; background:none; cursor:pointer;">キャンセル</button>
