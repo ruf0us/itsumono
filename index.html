@@ -50,7 +50,8 @@
         .cb-container input:checked + .cb-visual::after { display: block; }
         .item-row .item-name { flex: 1; font-size: 16px; color: #333; }
         .item-row .item-name input { font-size: 16px; padding: 4px; border: 1px solid #007aff; border-radius: 4px; width: 100%; }
-        .item-row .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .item-row .item-actions { display: flex; gap: 6px; flex-shrink: 0; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .editing .item-row .item-actions { opacity: 1; pointer-events: auto; }
         .item-row .edit-btn { color: #007aff; font-size: 14px; border: 1px solid #007aff; padding: 6px 10px; border-radius: 5px; background: none; cursor: pointer; }
         .item-row .delete-btn { color: #ff3b30; font-size: 14px; border: 1px solid #ff3b30; padding: 6px 10px; border-radius: 5px; background: none; cursor: pointer; }
 
@@ -193,6 +194,7 @@
             <input type="text" id="itemInput" placeholder="買うものを入力...">
             <select id="categorySelect"></select>
             <button onclick="addItem()">追加</button>
+            <button id="editModeBtn" onclick="toggleEditMode()" style="flex-shrink:0; padding:10px 12px; background:#007aff; color:white; border:none; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; white-space:nowrap;">編集</button>
         </div>
         <div id="homeList"></div>
     </div>
@@ -256,6 +258,7 @@
     // データ定義
     let appData = { items: [], categories: [] };
     let collapsedCategories = new Set(); // 折りたたまれているカテゴリ名（displayName）を管理
+    let editingMode = false; // 編集モードフラグ
 
     // デフォルトカテゴリの絵文字マップ
     const defaultCategoryEmojis = {
@@ -500,6 +503,20 @@
         appData.items = appData.items.filter(i => i.id !== id);
         saveData();
         renderHomeTab();
+    }
+
+    // 編集モード切り替え
+    function toggleEditMode() {
+        editingMode = !editingMode;
+        const btn = document.getElementById('editModeBtn');
+        const container = document.getElementById('homeList');
+        if (editingMode) {
+            btn.textContent = '完了';
+            container.classList.add('editing');
+        } else {
+            btn.textContent = '編集';
+            container.classList.remove('editing');
+        }
     }
 
     // アイテム編集モーダル
